@@ -66,14 +66,11 @@
             @pagination="getList"
           />
 
-
-
-
-          <el-dialog title="申请奖学金" :visible.sync="open" append-to-body>
+          <el-dialog title="申请条件明细" :visible.sync="open" append-to-body>
             <el-row>
-              <el-table :data="alldata" :border="false" style="width: 100%">
-                <el-table-column prop="conditionId" label="ID" align="center" width="100" :class="getClass"></el-table-column>
-                <el-table-column prop="condition" label="申请条件" align="center" :class="getClass" v-bind:class="{'no-approve': isInNoApproveList}"/>
+              <el-table :data="alldata" :border="false" style="width: 100%"  :row-class-name="tableRowClassName">
+                <el-table-column prop="conditionId" label="ID" align="center" width="100"></el-table-column> 
+                <el-table-column prop="condition" label="申请条件内容" align="center"></el-table-column>
               </el-table>
               <el-button type="primary" @click="handleSubmit">申请</el-button>
               <el-button @click="handleClose">取消</el-button>
@@ -119,6 +116,7 @@
         title: "",
         //是否特殊申请
         special:undefined,
+        count: 0,
         // 是否显示弹出层
         open: false,
         // 查询参数
@@ -139,18 +137,14 @@
       this.getList();
     },
     computed: {
-      isInNoApproveList() {
-        return (row) => {
-          return this.no_approve.some(item => item.conditionId === row.conditionId);
-        }
+      noApproveIds() {
+        return this.no_approve.map(item => item.conditionId);
       }
     },
     methods: {
       /** 对未填写行进行处理 */
-      getClass(row) {
-        return {
-        'not-filled': this.no_approve.some(item => item.conditionId === row.conditionId)
-        }
+      tableRowClassName( {row, rowIndex} ) {
+        return this.no_approve.some(item => item.conditionId === row.conditionId) ? 'warning-row' : '';
       },
       /** 申请 */
       handleSubmit(row) {
@@ -163,7 +157,7 @@
             }).then(({ value }) => {
               const params = {};
               params.scholarshipId = row.scholarshipId;
-              params.conditionContent = this.alldata;
+              params.conditionContent = JSON.stringify(this.data);
               params.special = this.special;
               params.specialReason = value; // 存储申请原因
               this.submitApplication(params);
@@ -171,7 +165,7 @@
         } else {
             const params = {};
             params.scholarshipId = row.scholarshipId;
-            params.conditionContent = this.alldata;
+            params.conditionContent = JSON.stringify(this.data);
             params.special = this.special;
             this.submitApplication(params);
         }
@@ -189,6 +183,7 @@
       /** 取消 */
       handleClose() {
         this.open = false;
+        this.count = this.count - 1;
         this.alldata = [];
         this.no_approve = [];
       },
@@ -210,26 +205,40 @@
       scholarshipapplicaiton(row) {
         this.selectedScholarship = row;
         slistCondition(row.scholarshipId).then(response => {
+          this.count = this.count + 1;
           this.alldata = response.data.alldata;
           this.no_approve = response.data.no_approve;
         });
         this.title = "奖学金申请";
         this.special = 0;
-        if(this.alldata.length !== 0) this.open = true;
-        else this.open = false;
+        console.log(this.no_approve);
 
+        if(this.no_approve.length !== 0) this.open = true;
+        else this.open = false;
+        console.log(this.open);
+        //如果返回后判断open为false，则说明，no_apporve为空，那么可以直接申请,由于存在置空操作，因此需要判断否已经被初始化，被初始化过了则判断直接执行
+        if(!this.open && count !== 0){
+          this.handleSubmit(row);
+          console.log("奖金申请直接执行");
+        }  
+        
       },
       /** 奖学金特殊申请 */
       specialscholarshipapplicaiton(row) {
         this.selectedScholarship = row;
         slistCondition(row.scholarshipId).then(response => {
           this.alldata = response.data.alldata;
+          this.count = this.count + 1;
           this.no_approve = response.data.no_approve;
         });
         this.special = 1;
         this.title = "奖学金特殊申请";
-        if(this.alldata.length !== 0) this.open = true;
+        if(!this.open && count !== 0){ 
+          this.open = true;
+        }
         else this.open = false;
+        //如果返回后判断open为false，则说明，no_apporve为空，那么可以直接申请
+        if(!this.open)  this.handleSubmit(row);
       },
       /** 重置按钮操作 */
       resetQuery() {
@@ -266,10 +275,10 @@
   };
   </script>
 <style>
-  .gray-row {
-    background-color: #f5f5f5;
-    color: #c0c4cc;
+  .el-table .warning-row {
+    background: rgb(206, 145, 117);
   }
+
 
 
 
