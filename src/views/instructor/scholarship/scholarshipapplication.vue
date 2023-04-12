@@ -67,19 +67,19 @@
           />
 
 
-      <!-- 奖金申请框-->
-      <el-dialog title="申请奖学金" :visible.sync="open"  append-to-body>
-          <el-row>
-            <!-- 左侧表单，展示学生对应的条件 -->   
+
+
+          <el-dialog title="申请奖学金" :visible.sync="open" append-to-body>
+            <el-row>
               <el-table :data="alldata" :border="false" style="width: 100%">
-                <el-table-column prop="conditionId" label="ID" align="center" width="100" :class-name="getClass"></el-table-column>
-                <el-table-column prop="condition" label="申请条件" align="center" :class-name="getClass"/>
-                <el-table-column prop="adjunct" label="申请附件" align="center" :class-name="getClass"/>
+                <el-table-column prop="conditionId" label="ID" align="center" width="100" :class="getClass"></el-table-column>
+                <el-table-column prop="condition" label="申请条件" align="center" :class="getClass" v-bind:class="{'no-approve': isInNoApproveList}"/>
               </el-table>
               <el-button type="primary" @click="handleSubmit">申请</el-button>
               <el-button @click="handleClose">取消</el-button>
-          </el-row>
-      </el-dialog>
+            </el-row>
+          </el-dialog>
+
       
     </div>
   </template>
@@ -138,13 +138,19 @@
     created() {
       this.getList();
     },
+    computed: {
+      isInNoApproveList() {
+        return (row) => {
+          return this.no_approve.some(item => item.conditionId === row.conditionId);
+        }
+      }
+    },
     methods: {
       /** 对未填写行进行处理 */
       getClass(row) {
-        if(this.no_approve.some(item => item.conditionId === row.conditionId)){
-          return 'gray-row';
+        return {
+        'not-filled': this.no_approve.some(item => item.conditionId === row.conditionId)
         }
-        return '';
       },
       /** 申请 */
       handleSubmit(row) {
@@ -183,6 +189,8 @@
       /** 取消 */
       handleClose() {
         this.open = false;
+        this.alldata = [];
+        this.no_approve = [];
       },
       /** 查询奖学金信息列表 */
       getList() {
@@ -202,20 +210,21 @@
       scholarshipapplicaiton(row) {
         this.selectedScholarship = row;
         slistCondition(row.scholarshipId).then(response => {
-          this.alldata = response.alldata;
-          this.no_approve = response.no_approve;
+          this.alldata = response.data.alldata;
+          this.no_approve = response.data.no_approve;
         });
         this.title = "奖学金申请";
         this.special = 0;
         if(this.alldata.length !== 0) this.open = true;
         else this.open = false;
+
       },
       /** 奖学金特殊申请 */
       specialscholarshipapplicaiton(row) {
         this.selectedScholarship = row;
         slistCondition(row.scholarshipId).then(response => {
-          this.alldata = response.alldata;
-          this.no_approve = response.no_approve;
+          this.alldata = response.data.alldata;
+          this.no_approve = response.data.no_approve;
         });
         this.special = 1;
         this.title = "奖学金特殊申请";
@@ -261,6 +270,9 @@
     background-color: #f5f5f5;
     color: #c0c4cc;
   }
+
+
+
 
 </style>
   
