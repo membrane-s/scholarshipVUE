@@ -148,6 +148,10 @@
       },
       /** 申请 */
       handleSubmit(row) {
+        if(this.no_approve.length !== 0){
+          alert("请先完善申请条件！");
+          return;
+        }
         if (this.special === 1) {
               this.$prompt('请填写特殊申请原因', '提示', {
               confirmButtonText: '',
@@ -182,6 +186,7 @@
 
       /** 取消 */
       handleClose() {
+        console.log("取消");
         this.open = false;
         this.count = this.count - 1;
         this.alldata = [];
@@ -205,23 +210,20 @@
       scholarshipapplicaiton(row) {
         this.selectedScholarship = row;
         slistCondition(row.scholarshipId).then(response => {
-          this.count = this.count + 1;
           this.alldata = response.data.alldata;
           this.no_approve = response.data.no_approve;
+          this.count = this.count + 1;
+          this.title = "奖学金申请";
+          this.special = 0;
+          if(this.no_approve.length !== 0) this.open = true;
+          else this.open = false;
+          //有个问题就是，如果说no_approve不为空，已经查询过后，那么需要展示出哪些申请条件是没有填写的，当补充完整后，即可申请。
+          //若申请条件都填写了，那么怎么处理，直接申请即可。
+          //如果返回后判断open为false，则说明，no_apporve为空，那么可以直接申请,由于存在置空操作，因此需要判断否已经被初始化，被初始化过了则判断直接执行
+          if(!this.open && this.count !== 0){
+            this.handleSubmit(row.scholarshipId);
+          }
         });
-        this.title = "奖学金申请";
-        this.special = 0;
-        console.log(this.no_approve);
-
-        if(this.no_approve.length !== 0) this.open = true;
-        else this.open = false;
-        console.log(this.open);
-        //如果返回后判断open为false，则说明，no_apporve为空，那么可以直接申请,由于存在置空操作，因此需要判断否已经被初始化，被初始化过了则判断直接执行
-        if(!this.open && count !== 0){
-          this.handleSubmit(row);
-          console.log("奖金申请直接执行");
-        }  
-        
       },
       /** 奖学金特殊申请 */
       specialscholarshipapplicaiton(row) {
@@ -230,15 +232,13 @@
           this.alldata = response.data.alldata;
           this.count = this.count + 1;
           this.no_approve = response.data.no_approve;
+          this.special = 1;
+          this.title = "奖学金特殊申请";
+          if(this.no_approve.length !== 0){this.open = true;}
+          else this.open = false;
+          //如果返回后判断open为false，则说明，no_apporve为空，那么可以直接申请
+          if(!this.open && this.count !== 0)  this.handleSubmit(row);
         });
-        this.special = 1;
-        this.title = "奖学金特殊申请";
-        if(!this.open && count !== 0){ 
-          this.open = true;
-        }
-        else this.open = false;
-        //如果返回后判断open为false，则说明，no_apporve为空，那么可以直接申请
-        if(!this.open)  this.handleSubmit(row);
       },
       /** 重置按钮操作 */
       resetQuery() {
