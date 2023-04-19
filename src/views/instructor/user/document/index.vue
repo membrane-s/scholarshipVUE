@@ -4,99 +4,104 @@
         <el-col :span="8">
           <el-card style="height: calc(100vh - 125px)">
             <div slot="header">
-              <span>必填申请条件</span>
+              <span>已填申请条件</span>
               <el-button
                 style="float: right; padding: 3px 0"
                 type="text"
                 icon="el-icon-refresh-right"
-                @click="refreshCacheKeys()"
+                @click="refreshCondition()"
               ></el-button>
             </div>
             <el-table
               v-loading="subLoading"
-              :data="cacheKeys"
+              :data="conditionContent"
               :height="tableHeight"
               highlight-current-row
-              @row-click="handleCacheValue"
+              @row-click="handleConditionValue"
               style="width: 100%"
             >
               <el-table-column
                 label="序号"
                 width="60"
                 type="index"
+                prop="conditionId"
               ></el-table-column>
               <el-table-column
                 label="申请条件内容"
                 align="center"
+                prop="condition"
                 :show-overflow-tooltip="true"
-                :formatter="keyFormatter"
               >
               </el-table-column>
+
               <el-table-column
-                label="操作"
-                width="60"
-                align="center"
-                class-name="small-padding fixed-width"
-              >
+                prop="tag"
+                label="标签"
+                width="100"
+                :filters="[{ text: '必填', value: 1 }, { text: '非必填', value: 0 }]"
+                :filter-method="filterTag"
+                filter-placement="bottom-end">
                 <template slot-scope="scope">
-                  <el-button
-                    size="mini"
-                    type="text"
-                    icon="el-icon-delete"
-                    @click="handleClearCacheKey(scope.row)"
-                  ></el-button>
+                  <el-tag
+                    :type="scope.row.isNecessity === 1 ? 'success' : 'primary'"
+                    disable-transitions>{{scope.row.isNecessity === 1 ? "必填" : "非必填"}}</el-tag>
                 </template>
               </el-table-column>
+
+
             </el-table>
           </el-card>
         </el-col>
   
+
+
         <el-col :span="8">
           <el-card style="height: calc(100vh - 125px)">
             <div slot="header">
-              <span>未填申请条件</span>
+              <span>条件库</span>
               <el-button
                 style="float: right; padding: 3px 0"
                 type="text"
                 icon="el-icon-refresh-right"
-                @click="refreshCacheKeys()"
+                @click="refreshCondition()"
               ></el-button>
             </div>
             <el-table
               v-loading="subLoading"
-              :data="cacheKeys"
+              :data="unConditionContent"
               :height="tableHeight"
               highlight-current-row
-              @row-click="handleCacheValue"
+              @row-click="handleConditionValue"
               style="width: 100%"
             >
-              <el-table-column
+            <el-table-column
                 label="序号"
                 width="60"
                 type="index"
+                prop="conditionId"
               ></el-table-column>
               <el-table-column
                 label="申请条件内容"
                 align="center"
+                prop="condition"
                 :show-overflow-tooltip="true"
-                :formatter="keyFormatter"
               >
               </el-table-column>
+
               <el-table-column
-                label="操作"
-                width="60"
-                align="center"
-                class-name="small-padding fixed-width"
-              >
+                prop="tag"
+                label="标签"
+                width="100"
+                :filters="[{ text: '必填', value: 1 }, { text: '非必填', value: 0 }]"
+                :filter-method="filterTag"
+                filter-placement="bottom-end">
                 <template slot-scope="scope">
-                  <el-button
-                    size="mini"
-                    type="text"
-                    icon="el-icon-delete"
-                    @click="handleClearCacheKey(scope.row)"
-                  ></el-button>
+                  <el-tag
+                    :type="scope.row.isNecessity === 1 ? 'success' : 'primary'"
+                    disable-transitions>{{scope.row.isNecessity === 1 ? "必填" : "非必填"}}</el-tag>
                 </template>
               </el-table-column>
+
             </el-table>
           </el-card>
         </el-col>
@@ -105,30 +110,23 @@
           <el-card :bordered="false" style="height: calc(100vh - 125px)">
             <div slot="header">
               <span>条件详情</span>
-              <el-button
-                style="float: right; padding: 3px 0"
-                type="text"
-                icon="el-icon-refresh-right"
-                @click="handleClearCacheAll()"
-                >清理全部</el-button
-              >
             </div>
-            <el-form :model="cacheForm">
+            <el-form :model="ConditionForm">
               <el-row :gutter="32">
                 <el-col :offset="1" :span="22">
-                  <el-form-item label="申请条件编号:" prop="cacheName">
-                    <el-input v-model="cacheForm.cacheName" :readOnly="true" />
+                  <el-form-item label="申请条件编号:" prop="conditionId">
+                    <el-input v-model="ConditionForm.conditionId" :readOnly="true" />
                   </el-form-item>
                 </el-col>
                 <el-col :offset="1" :span="22">
-                  <el-form-item label="申请条件内容:" prop="cacheKey">
-                    <el-input v-model="cacheForm.cacheKey" :readOnly="true" />
+                  <el-form-item label="申请条件内容:" prop="condition">
+                    <el-input v-model="ConditionForm.condition" :readOnly="true" />
                   </el-form-item>
                 </el-col>
                 <el-col :offset="1" :span="22">
                   <el-form-item label="申请条件:" prop="cacheValue">
                     <el-input
-                      v-model="cacheForm.cacheValue"
+                      v-model="ConditionForm.cacheValue"
                       type="textarea"
                       :rows="8"
                       :readOnly="true"
@@ -144,90 +142,47 @@
   </template>
   
   <script>
-  import { listCacheName, listCacheKey, getCacheValue, clearCacheName, clearCacheKey, clearCacheAll } from "@/api/monitor/cache";
+  import { listAllCondition, getCondition} from "@/api/instructor/condition";
   
   export default {
-    name: "CacheList",
+    name: "studentDocument",
     data() {
       return {
-        cacheNames: [],
-        cacheKeys: [],
-        cacheForm: {},
+        conditionContent: [],
+        unConditionContent: [],
+        ConditionForm: {},
         loading: true,
         subLoading: false,
-        nowCacheName: "",
         tableHeight: window.innerHeight - 200
       };
     },
     created() {
-      this.getCacheNames();
+      this.getConditions();
     },
     methods: {
+      filterTag(value, row) {
+        return row.isNecessity === value;
+      },
       /** 查询缓存名称列表 */
-      getCacheNames() {
+      getConditions() {
         this.loading = true;
-        listCacheName().then(response => {
-          this.cacheNames = response.data;
+        listAllCondition().then(response => {
+          this.conditionContent = response.data.conditionContent;
+          this.unConditionContent = response.data.unConditionContent;
           this.loading = false;
         });
       },
       /** 刷新缓存名称列表 */
-      refreshCacheNames() {
-        this.getCacheNames();
-        this.$modal.msgSuccess("刷新缓存列表成功");
-      },
-      /** 清理指定名称缓存 */
-      handleClearCacheName(row) {
-        clearCacheName(row.cacheName).then(response => {
-          this.$modal.msgSuccess("清理缓存名称[" + this.nowCacheName + "]成功");
-          this.getCacheKeys();
-        });
-      },
-      /** 查询缓存键名列表 */
-      getCacheKeys(row) {
-        const cacheName = row !== undefined ? row.cacheName : this.nowCacheName;
-        if (cacheName === "") {
-          return;
-        }
-        this.subLoading = true;
-        listCacheKey(cacheName).then(response => {
-          this.cacheKeys = response.data;
-          this.subLoading = false;
-          this.nowCacheName = cacheName;
-        });
-      },
-      /** 刷新缓存键名列表 */
-      refreshCacheKeys() {
-        this.getCacheKeys();
-        this.$modal.msgSuccess("刷新键名列表成功");
-      },
-      /** 清理指定键名缓存 */
-      handleClearCacheKey(cacheKey) {
-        clearCacheKey(cacheKey).then(response => {
-          this.$modal.msgSuccess("清理缓存键名[" + cacheKey + "]成功");
-          this.getCacheKeys();
-        });
-      },
-      /** 列表前缀去除 */
-      nameFormatter(row) {
-        return row.cacheName.replace(":", "");
-      },
-      /** 键名前缀去除 */
-      keyFormatter(cacheKey) {
-        return cacheKey.replace(this.nowCacheName, "");
+      refreshCondition() {
+        this.getConditions();
+        this.$modal.msgSuccess("刷新列表成功");
       },
       /** 查询缓存内容详细 */
-      handleCacheValue(cacheKey) {
-        getCacheValue(this.nowCacheName, cacheKey).then(response => {
-          this.cacheForm = response.data;
+      handleConditionValue(row) {
+        getCondition(row.conditionId).then(response => {
+          this.ConditionForm = response.data;
         });
       },
-      /** 清理全部缓存 */
-      handleClearCacheAll() {
-        clearCacheAll().then(response => {
-          this.$modal.msgSuccess("清理全部缓存成功");
-        });
-      }
     },
   };
   </script>

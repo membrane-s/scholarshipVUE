@@ -9,6 +9,14 @@ export function listCondition(query) {
   })
 }
 
+// 查询申请条件列表
+export function listAllCondition() {
+  return request({
+    url: '/instructor/condition/listAll',
+    method: 'get',
+  })
+}
+
 // 查询奖金对应申请条件列表
 export function slistCondition(scholarshipId) {
   return request({
