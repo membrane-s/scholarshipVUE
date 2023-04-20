@@ -34,21 +34,6 @@
               >
               </el-table-column>
 
-              <el-table-column
-                prop="tag"
-                label="标签"
-                width="100"
-                :filters="[{ text: '必填', value: 1 }, { text: '非必填', value: 0 }]"
-                :filter-method="filterTag"
-                filter-placement="bottom-end">
-                <template slot-scope="scope">
-                  <el-tag
-                    :type="scope.row.isNecessity === 1 ? 'success' : 'primary'"
-                    disable-transitions>{{scope.row.isNecessity === 1 ? "必填" : "非必填"}}</el-tag>
-                </template>
-              </el-table-column>
-
-
             </el-table>
           </el-card>
         </el-col>
@@ -114,12 +99,12 @@
             <el-form :model="ConditionForm">
               <el-row :gutter="32">
                 <el-col :offset="1" :span="22">
-                  <el-form-item label="申请条件编号:" prop="conditionId">
+                  <el-form-item label="条件编号:" prop="conditionId">
                     <el-input v-model="ConditionForm.conditionId" :readOnly="true" />
                   </el-form-item>
                 </el-col>
                 <el-col :offset="1" :span="22">
-                  <el-form-item label="申请条件内容:" prop="condition">
+                  <el-form-item label="条件内容:" prop="condition">
                     <el-input v-model="ConditionForm.condition" :readOnly="true" />
                   </el-form-item>
                 </el-col>
@@ -133,6 +118,7 @@
                     />
                   </el-form-item>
                 </el-col>
+                
               </el-row>
             </el-form>
           </el-card>
@@ -168,7 +154,7 @@
         this.loading = true;
         listAllCondition().then(response => {
           this.conditionContent = response.data.conditionContent;
-          this.unConditionContent = response.data.unConditionContent;
+          this.unConditionContent = response.data.conditionContents;
           this.loading = false;
         });
       },
